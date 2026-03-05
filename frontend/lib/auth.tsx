@@ -34,7 +34,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function initAuth() {
     try {
-      // Try Telegram WebApp auth first
+      // Try existing token first (admin login takes priority)
+      const existing = localStorage.getItem("access_token");
+      if (existing) {
+        const me = await api.auth.me();
+        setUser(me);
+        setIsLoading(false);
+        return;
+      }
+
+      // Try Telegram WebApp auth
       if (typeof window !== "undefined" && window.Telegram?.WebApp?.initData) {
         const tg = window.Telegram.WebApp;
         tg.ready();
@@ -43,15 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const result = await api.auth.telegramLogin(tg.initData);
         setToken(result.access_token);
 
-        const me = await api.auth.me();
-        setUser(me);
-        setIsLoading(false);
-        return;
-      }
-
-      // Try existing token
-      const existing = localStorage.getItem("access_token");
-      if (existing) {
         const me = await api.auth.me();
         setUser(me);
       }
